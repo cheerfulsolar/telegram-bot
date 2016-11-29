@@ -69,15 +69,6 @@ type w struct {
 	Cod  int64
 }
 
-func readconfig(data string) c {
-	out := c{}
-	err := yaml.Unmarshal([]byte(data), &out)
-	if err != nil {
-		log.Fatalf("Wrong config data.")
-	}
-	return out
-}
-
 func main() {
 	cdata, err := ioutil.ReadFile(".config.yml")
 	conf := readconfig(string(cdata))
@@ -115,54 +106,15 @@ func main() {
 			switch Text {
 			case "/weather":
 				{
-					var weather w
-					resp, err := http.Get(fmt.Sprintf("http://api.openweathermap.org/data/2.5/weather?units=metric&id=%s&APPID=%s", conf.Weather.City, conf.Weather.Token))
-					if err != nil {
-						log.Println(err)
-						reply = "No data."
-					}
-					body, err := ioutil.ReadAll(resp.Body)
-					resp.Body.Close()
-					if err != nil {
-						log.Println(err)
-						reply = "No data."
-					}
-					err = json.Unmarshal([]byte(body), &weather)
-					if err != nil {
-						log.Println(err)
-						reply = "No data."
-					}
-					//					fmt.Println(string(body))
-					//					fmt.Println(weather)
-					reply = fmt.Sprintf(
-						WEATHER,
-						weather.Name,
-						time.Unix(weather.Dt, 0),
-						weather.Main.Temp,
-						weather.Main.Temp_min,
-						weather.Main.Temp_max,
-						int64(float64(weather.Main.Pressure)/1.333224),
-						weather.Main.Humidity,
-						winddirection(weather.Wind.Deg),
-						weather.Wind.Speed,
-					)
+					reply = getweather(reply, conf)
 				}
 			case "/stocks":
 				{
-					resp, err := http.Get("http://finance.yahoo.com/d/quotes.csv?s=MAIL.IL&f=l1p2")
-					if err != nil {
-						reply = "No data."
-					}
-					body, err := ioutil.ReadAll(resp.Body)
-					resp.Body.Close()
-					if err != nil {
-						reply = "No data."
-					}
-					reply = fmt.Sprintf("%s", body)
+					reply = getstocks(reply)
 				}
 			case "/photo":
 				{
-
+					reply = getphoto(reply)
 				}
 			default:
 				{
@@ -180,19 +132,15 @@ func main() {
 			}
 		}
 	}
+}
 
-	/*	for update := range updates {
-		if update.Message == nil {
-			continue
-		}
-
-		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
-
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
-		msg.ReplyToMessageID = update.Message.MessageID
-
-		bot.Send(msg)
-	}*/
+func readconfig(data string) c {
+	out := c{}
+	err := yaml.Unmarshal([]byte(data), &out)
+	if err != nil {
+		log.Fatalf("Wrong config data.")
+	}
+	return out
 }
 
 func winddirection(i int64) string {
@@ -226,4 +174,55 @@ func winddirection(i int64) string {
 		}
 	}
 	return ""
+}
+
+func getweather(reply string, conf c) string {
+	var weather w
+	resp, err := http.Get(fmt.Sprintf("http://api.openweathermap.org/data/2.5/weather?units=metric&id=%s&APPID=%s", conf.Weather.City, conf.Weather.Token))
+	if err != nil {
+		log.Println(err)
+		reply = "No data."
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		log.Println(err)
+		reply = "No data."
+	}
+	err = json.Unmarshal([]byte(body), &weather)
+	if err != nil {
+		log.Println(err)
+		reply = "No data."
+	}
+	reply = fmt.Sprintf(
+		WEATHER,
+		weather.Name,
+		time.Unix(weather.Dt, 0),
+		weather.Main.Temp,
+		weather.Main.Temp_min,
+		weather.Main.Temp_max,
+		int64(float64(weather.Main.Pressure)/1.333224),
+		weather.Main.Humidity,
+		winddirection(weather.Wind.Deg),
+		weather.Wind.Speed,
+	)
+	return reply
+}
+
+func getstocks(reply string) string {
+	resp, err := http.Get("http://finance.yahoo.com/d/quotes.csv?s=MAIL.IL&f=l1p2")
+	if err != nil {
+		reply = "No data."
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		reply = "No data."
+	}
+	reply = fmt.Sprintf("%s", body)
+	return reply
+}
+
+func getphoto(reply string) string {
+	return reply
 }
