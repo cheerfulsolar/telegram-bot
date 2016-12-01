@@ -80,14 +80,7 @@ func main() {
 	if err != nil {
 		log.Panic(err)
 	}
-	fmt.Println(conf)
 
-	/*
-		cdata, err := ioutil.ReadFile(".config.yml")
-		if err != nil {
-			log.Panic(err)
-		}
-		conf := readconfig(string(cdata))*/
 	bot, err := tgbotapi.NewBotAPI(conf.Bot.Token)
 	if err != nil {
 		log.Panic(err)
@@ -149,15 +142,6 @@ func main() {
 		}
 	}
 }
-
-/*func readconfig(data string) c {
-	out := c{}
-	err := yaml.Unmarshal([]byte(data), &out)
-	if err != nil {
-		log.Fatalf("Wrong config data.")
-	}
-	return out
-}*/
 
 func winddirection(i int64) string {
 	winds := map[int]string{
