@@ -6,23 +6,23 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"sort"
 	"time"
 
 	"gopkg.in/telegram-bot-api.v4"
-	"gopkg.in/yaml.v2"
 )
 
 const WEATHER = "Погода в %s на %s\nТемпература: %.1f°C (%.1f°C..%.1f°C)\nДавление: %d мм/рт.с\nВлажность: %d%%\nВетер: %s %.1f м/с"
 
-type c struct {
+type Config struct {
 	Bot struct {
-		Username string `yaml:"username"`
-		Token    string `yaml:"token"`
+		Username string
+		Token    string
 	}
 	Weather struct {
-		City  string `yaml:"city"`
-		Token string `yaml:"token"`
+		City  string
+		Token string
 	}
 }
 
@@ -70,8 +70,24 @@ type w struct {
 }
 
 func main() {
-	cdata, err := ioutil.ReadFile(".config.yml")
-	conf := readconfig(string(cdata))
+	cdata, err := os.Open("config.json")
+	if err != nil {
+		log.Panic(err)
+	}
+	decoder := json.NewDecoder(cdata)
+	conf := new(Config)
+	err = decoder.Decode(&conf)
+	if err != nil {
+		log.Panic(err)
+	}
+	fmt.Println(conf)
+
+	/*
+		cdata, err := ioutil.ReadFile(".config.yml")
+		if err != nil {
+			log.Panic(err)
+		}
+		conf := readconfig(string(cdata))*/
 	bot, err := tgbotapi.NewBotAPI(conf.Bot.Token)
 	if err != nil {
 		log.Panic(err)
@@ -134,14 +150,14 @@ func main() {
 	}
 }
 
-func readconfig(data string) c {
+/*func readconfig(data string) c {
 	out := c{}
 	err := yaml.Unmarshal([]byte(data), &out)
 	if err != nil {
 		log.Fatalf("Wrong config data.")
 	}
 	return out
-}
+}*/
 
 func winddirection(i int64) string {
 	winds := map[int]string{
@@ -176,7 +192,7 @@ func winddirection(i int64) string {
 	return ""
 }
 
-func getweather(reply string, conf c) string {
+func getweather(reply string, conf *Config) string {
 	var weather w
 	resp, err := http.Get(fmt.Sprintf("http://api.openweathermap.org/data/2.5/weather?units=metric&id=%s&APPID=%s", conf.Weather.City, conf.Weather.Token))
 	if err != nil {
