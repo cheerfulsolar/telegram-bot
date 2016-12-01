@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sort"
 	"time"
 
@@ -70,7 +71,11 @@ type w struct {
 }
 
 func main() {
-	cdata, err := os.Open("config.json")
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		log.Fatal(err)
+	}
+	cdata, err := os.Open(filepath.Join(dir, "config.json"))
 	if err != nil {
 		log.Panic(err)
 	}
